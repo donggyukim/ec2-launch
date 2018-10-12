@@ -1,0 +1,6 @@
+*.swp
+*.tmp
+*.out
+*.err
+*.sample
+__pycache__
