@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import yaml
 import aws
 import ssh
 
@@ -23,68 +24,93 @@ SPEC_INT = [
 ]
 """
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-k", "--key", dest="key", type=str, required=True,
-    help="key file")
-parser.add_argument(
-    "-i", "--input", dest="input", type=str, required=True,
-    help="input type [test | ref]")
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-k", "--key", dest="key", type=str, required=True,
+        help="key file")
+    parser.add_argument(
+        "-w", "--workload", dest="workload", type=str, required=True,
+        help="workload yaml file")
+    parser.add_argument(
+        "-d", "--design", dest="design", type=str, required=True,
+        help="design yaml file")
 
-args = parser.parse_args()
+    args = parser.parse_args()
 
-names = [b + "." + args.input for b in SPEC_INT]
-count = len(names)
-for name in names:
-    out_filename = name + ".out"
-    err_filename = name + ".err"
-    if os.path.exists(out_filename):
-        os.remove(out_filename)
-    if os.path.exists(err_filename):
-        os.remove(err_filename)
+    # Load setup
 
-# ami = "ami-02cf4b28236606aa5"
-ami = "ami-0633862c04a54b7e3"
-instances = aws.launch_instances(ami, count=count)
-aws.wait_on_instance_launches(instances)
+    with open("configs/common.yml", "r") as _f:
+        data = yaml.load(_f)
+        ami = data["ami"]
+        root_dir = data["root_dir"]
 
-instance_ids = [instance.id for instance in instances]
-instance_descs = aws.describe_instances(instance_ids)
-clients = ssh.connect_instances(instance_descs, args.key)
+    with open(args.design) as _f:
+        data = yaml.load(_f)
+        project = data["project"]
+        design = data["design"]
+        config = data["config"]
+        agfi = data["agfi"]
 
-afi = "agfi-0fd34e8219d414257" # Rocket
+    full_config = project + "." + config
+    driver_dir = os.path.join(root_dir, "output", "f1", project + "." + config)
 
-load_afi = [
-    "%s && %s %s" % (
-        "cd /home/centos/dessert-hdk",
-        "./bin/load-afi.sh",
-        afi)
-    for _ in range(count)
-]
+    with open(args.workload) as _f:
+        data = yaml.load(_f)
+        bin_dir = data["bin_dir"]
+        benchmarks = data["benchmarks"]
 
-design = "Rocket"
-# design = "BOOM"
-config = "DefaultRocketConfig"
-# config = "SmallBoomConfig"
+    # Set stdout/stderr file for each benchmark
+    if not os.path.exists(full_config):
+        os.makedirs(full_config)
 
-run_sim = [
-    "source %s && make -C %s run SIM_BINARY=%s/bblvmlinux-%s DESIGN=%s CONFIG=%s" % (
-        "/home/centos/.bash_profile",
-        "/home/centos/dessert-hdk",
-        "/home/centos/spec2006",
-        name, design, config)
-    for name in names
-]
+    for benchmark in benchmarks:
+        benchmark_data = benchmarks[benchmark]
+        benchmark_data["stdout"] = os.path.join(full_config, benchmark + ".out")
+        benchmark_data["stderr"] = os.path.join(full_config, benchmark + ".err")
+        if os.path.exists(benchmark_data["stdout"]):
+            os.remove(benchmark_data["stdout"])
+        if os.path.exists(benchmark_data["stderr"]):
+            os.remove(benchmark_data["stderr"])
 
-ssh.execute_commands(names, clients, load_afi)
-ssh.execute_commands(names, clients, run_sim)
+    # Launch instances
+    count = len(benchmarks)
+    instances = aws.launch_instances(ami, count=count)
+    aws.wait_on_instance_launches(instances)
+    instance_ids = [instance.id for instance in instances]
+    instance_descs = aws.describe_instances(instance_ids)
 
-for client, name in zip(clients, names):
-    sample_file = "bblvmlinux-" + name + ".sample"
-    local_path = "./%s" % (sample_file)
-    remote_path = "/home/centos/dessert-hdk/output/f1/dessert.rocketchip.%s/%s" % (
-        config, sample_file)
-    ssh.get(client, remote_path, local_path)
+    # SSH to instances
+    clients = ssh.connect_instances(instance_descs, args.key)
 
-ssh.close(clients)
-aws.terminate_instances(instances)
+    load_afi = [
+        "cd %s && ./bin/load-afi.sh %s" % (root_dir, agfi)
+        for _ in range(count)
+    ]
+    ssh.execute_commands(clients, benchmarks, load_afi)
+
+    # Run simulations
+    run_sim = [
+        "source /home/centos/.bash_profile && "
+        "make -C %s run "
+        "PROJECT=%s DESIGN=%s "
+        "CONFIG_PROJECT=%s CONFIG=%s "
+        "SIM_BINARY=%s/%s"
+        % (root_dir, project, design, project, config,
+           bin_dir, benchmarks[benchmark]["binary"])
+        for benchmark in benchmarks
+    ]
+    ssh.execute_commands(clients, benchmarks, run_sim)
+
+    # Copy sample files
+    for client, benchmark in zip(clients, list(benchmarks.keys())):
+        sample_file = benchmarks[benchmark]["sample"]
+        remote_path = os.path.join(driver_dir, sample_file)
+        local_path = os.path.join(full_config, sample_file)
+        ssh.get(client, remote_path, local_path)
+
+    ssh.close(clients)
+    aws.terminate_instances(instances)
+
+if __name__ == "__main__":
+    main()

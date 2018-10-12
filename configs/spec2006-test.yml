@@ -1,0 +1,11 @@
+bin_dir: /home/centos/spec2006
+benchmarks: 
+    400.perlbench.test: 
+        binary: bblvmlinux-400.perlbench.test
+        sample: bblvmlinux-400.perlbench.test.sample
+    403.gcc.test: 
+        binary: bblvmlinux-403.gcc.test
+        sample: bblvmlinux-403.gcc.test.sample
+    483.xalancbmk.test: 
+        binary: bblvmlinux-483.xalancbmk.test
+        sample: bblvmlinux-483.xalancbmk.test.sample

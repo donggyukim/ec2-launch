@@ -1,5 +1,4 @@
 import threading
-import os
 import paramiko
 
 def connect_instances(instances, key_file):
@@ -16,19 +15,17 @@ def connect_instances(instances, key_file):
 
     return clients
 
-def execute_commands(names, clients, commands, _dir=None):
-    assert len(clients) == len(names)
+def execute_commands(clients, benchmarks, commands):
+    assert len(clients) == len(benchmarks)
     assert len(clients) == len(commands)
-    target_dir = _dir if _dir is not None else ""
 
     class ExecutionThread(threading.Thread):
-        def __init__(self, name, client, command):
+        def __init__(self, client, benchmark, command):
             super(ExecutionThread, self).__init__()
-            self.name = name
             self.client = client
             self.command = command
-            self.out = open(os.path.join(target_dir, name + ".out"), "a")
-            self.err = open(os.path.join(target_dir, name + ".err"), "a")
+            self.out = open(benchmark["stdout"], "a")
+            self.err = open(benchmark["stderr"], "a")
 
         def run(self):
             self.out.write("[command] start %s\n" % (self.command))
@@ -47,8 +44,8 @@ def execute_commands(names, clients, commands, _dir=None):
             self.err.close()
 
     threads = []
-    for name, client, command in zip(names, clients, commands):
-        thread = ExecutionThread(name, client, command)
+    for client, benchmark, command in zip(clients, benchmarks, commands):
+        thread = ExecutionThread(client, benchmarks[benchmark], command)
         thread.start()
         threads.append(thread)
 

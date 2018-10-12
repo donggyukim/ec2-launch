@@ -1,0 +1,4 @@
+project: dessert.rocketchip
+design: Rocket
+config: DefaultRocketConfig
+agfi: agfi-0fd34e8219d414257
