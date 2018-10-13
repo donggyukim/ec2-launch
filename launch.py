@@ -2,7 +2,8 @@
 
 import argparse
 import os
-from thread import ExecutionThread
+import time
+import threading
 import yaml
 import aws
 import ssh
@@ -50,9 +51,6 @@ def main():
     instance_ids = [instance.id for instance in instances]
     instance_descs = aws.describe_instances(instance_ids)
 
-    # SSH to instances
-    clients = ssh.connect_instances(instance_descs, args.key)
-
     # Set stdout/stderr file for each benchmark
     command_sets = []
     outs = []
@@ -76,18 +74,14 @@ def main():
                 benchmarks[benchmark]["binary"]))
         command_sets.append(commands)
 
-
     # Start threading
-    threads = []
-    for client, instance, commands, out, err, sample \
-        in zip(clients, instances, command_sets, outs, errs, samples):
-        thread = ExecutionThread(
-            client, instance, commands, out, err, sample, full_config, driver_dir)
-        thread.start()
-        threads.append(thread)
-
-    for thread in threads:
-        thread.join()
+    for instance, commands, out, err, sample \
+        in zip(instance_descs, command_sets, outs, errs, samples):
+        threading.Thread(
+            target=ssh.execute,
+            args=(instance, args.key, commands, out, err, sample, full_config, driver_dir)
+        ).start()
+        time.sleep(1.0)
 
 if __name__ == "__main__":
     main()

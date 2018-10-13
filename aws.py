@@ -32,9 +32,8 @@ def describe_instances(instance_ids):
     ec2 = boto3.client('ec2')
     return ec2.describe_instances(InstanceIds=instance_ids)['Reservations'][0]['Instances']
 
-def terminate_instances(instances):
+def terminate_instances(instance_ids):
     client = boto3.client('ec2')
-    instance_ids = [instance.id for instance in instances]
     client.terminate_instances(InstanceIds=instance_ids)
     for instance_id in instance_ids:
         print(str(instance_id) + " terminated!")
