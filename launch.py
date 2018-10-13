@@ -2,27 +2,10 @@
 
 import argparse
 import os
+from thread import ExecutionThread
 import yaml
 import aws
 import ssh
-
-SPEC_INT = [
-    "400.perlbench",
-]
-"""
-    "401.bzip2",
-    "403.gcc",
-    "429.mcf",
-    "445.gobmk",
-    "456.hmmer",
-    "458.sjeng",
-    "462.libquantum",
-    "464.h264ref",
-    "471.omnetpp",
-    "473.astar",
-    "483.xalancbmk"
-]
-"""
 
 def main():
     parser = argparse.ArgumentParser()
@@ -60,19 +43,6 @@ def main():
         bin_dir = data["bin_dir"]
         benchmarks = data["benchmarks"]
 
-    # Set stdout/stderr file for each benchmark
-    if not os.path.exists(full_config):
-        os.makedirs(full_config)
-
-    for benchmark in benchmarks:
-        benchmark_data = benchmarks[benchmark]
-        benchmark_data["stdout"] = os.path.join(full_config, benchmark + ".out")
-        benchmark_data["stderr"] = os.path.join(full_config, benchmark + ".err")
-        if os.path.exists(benchmark_data["stdout"]):
-            os.remove(benchmark_data["stdout"])
-        if os.path.exists(benchmark_data["stderr"]):
-            os.remove(benchmark_data["stderr"])
-
     # Launch instances
     count = len(benchmarks)
     instances = aws.launch_instances(ami, count=count)
@@ -83,34 +53,41 @@ def main():
     # SSH to instances
     clients = ssh.connect_instances(instance_descs, args.key)
 
-    load_afi = [
-        "cd %s && ./bin/load-afi.sh %s" % (root_dir, agfi)
-        for _ in range(count)
-    ]
-    ssh.execute_commands(clients, benchmarks, load_afi)
+    # Set stdout/stderr file for each benchmark
+    command_sets = []
+    outs = []
+    errs = []
+    samples = []
 
-    # Run simulations
-    run_sim = [
-        "source /home/centos/.bash_profile && "
-        "make -C %s run "
-        "PROJECT=%s DESIGN=%s "
-        "CONFIG_PROJECT=%s CONFIG=%s "
-        "SIM_BINARY=%s/%s"
-        % (root_dir, project, design, project, config,
-           bin_dir, benchmarks[benchmark]["binary"])
-        for benchmark in benchmarks
-    ]
-    ssh.execute_commands(clients, benchmarks, run_sim)
+    if not os.path.exists(full_config):
+        os.makedirs(full_config)
 
-    # Copy sample files
-    for client, benchmark in zip(clients, list(benchmarks.keys())):
-        sample_file = benchmarks[benchmark]["sample"]
-        remote_path = os.path.join(driver_dir, sample_file)
-        local_path = os.path.join(full_config, sample_file)
-        ssh.get(client, remote_path, local_path)
+    for benchmark in benchmarks:
+        outs.append(os.path.join(full_config, benchmark + ".out"))
+        errs.append(os.path.join(full_config, benchmark + ".err"))
+        samples.append(benchmarks[benchmark]["sample"])
+        commands = []
+        commands.append("cd %s && ./bin/load-afi.sh %s" % (root_dir, agfi))
+        commands.append(
+            "source /home/centos/.bash_profile && " \
+            "make -C %s run PROJECT=%s DESIGN=%s " \
+            "CONFIG_PROJECT=%s CONFIG=%s SIM_BINARY=%s/%s" % (
+                root_dir, project, design, project, config, bin_dir,
+                benchmarks[benchmark]["binary"]))
+        command_sets.append(commands)
 
-    ssh.close(clients)
-    aws.terminate_instances(instances)
+
+    # Start threading
+    threads = []
+    for client, instance, commands, out, err, sample \
+        in zip(clients, instances, command_sets, outs, errs, samples):
+        thread = ExecutionThread(
+            client, instance, commands, out, err, sample, full_config, driver_dir)
+        thread.start()
+        threads.append(thread)
+
+    for thread in threads:
+        thread.join()
 
 if __name__ == "__main__":
     main()

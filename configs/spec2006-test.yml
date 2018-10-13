@@ -3,9 +3,33 @@ benchmarks:
     400.perlbench.test: 
         binary: bblvmlinux-400.perlbench.test
         sample: bblvmlinux-400.perlbench.test.sample
+    401.bzip2.test: 
+        binary: bblvmlinux-401.bzip2.test
+        sample: bblvmlinux-401.bzip2.test.sample
     403.gcc.test: 
         binary: bblvmlinux-403.gcc.test
         sample: bblvmlinux-403.gcc.test.sample
+    429.mcf.test: 
+        binary: bblvmlinux-429.mcf.test
+        sample: bblvmlinux-429.mcf.test.sample
+    445.gobmk.test: 
+        binary: bblvmlinux-445.gobmk.test
+        sample: bblvmlinux-445.gobmk.test.sample
+    456.hmmer.test: 
+        binary: bblvmlinux-456.hmmer.test
+        sample: bblvmlinux-456.hmmer.test.sample
+    458.sjeng.test: 
+        binary: bblvmlinux-458.sjeng.test
+        sample: bblvmlinux-458.sjeng.test.sample
+    464.h264ref.test: 
+        binary: bblvmlinux-464.h264ref.test
+        sample: bblvmlinux-464.h264ref.test.sample
+    471.omnetpp.test: 
+        binary: bblvmlinux-471.omnetpp.test
+        sample: bblvmlinux-471.omnetpp.test.sample
+    473.astar.test: 
+        binary: bblvmlinux-473.astar.test
+        sample: bblvmlinux-473.astar.test.sample
     483.xalancbmk.test: 
         binary: bblvmlinux-483.xalancbmk.test
         sample: bblvmlinux-483.xalancbmk.test.sample
