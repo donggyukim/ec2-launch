@@ -21,6 +21,9 @@ benchmarks:
     458.sjeng.test: 
         binary: bblvmlinux-458.sjeng.test
         sample: bblvmlinux-458.sjeng.test.sample
+    462.libquantum.test: 
+        binary: bblvmlinux-462.libquantum.test
+        sample: bblvmlinux-462.libquantum.test.sample
     464.h264ref.test: 
         binary: bblvmlinux-464.h264ref.test
         sample: bblvmlinux-464.h264ref.test.sample

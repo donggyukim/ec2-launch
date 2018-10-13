@@ -1,0 +1,4 @@
+project: dessert.rocketchip
+design: BOOM
+config: SmallBoomConfig
+agfi: agfi-0b7c974ed454c0ba4 

@@ -69,7 +69,7 @@ def main():
         commands.append(
             "source /home/centos/.bash_profile && " \
             "make -C %s run PROJECT=%s DESIGN=%s " \
-            "CONFIG_PROJECT=%s CONFIG=%s SIM_BINARY=%s/%s" % (
+            "CONFIG_PROJECT=%s CONFIG_NAME=%s SIM_BINARY=%s/%s" % (
                 root_dir, project, design, project, config, bin_dir,
                 benchmarks[benchmark]["binary"]))
         command_sets.append(commands)

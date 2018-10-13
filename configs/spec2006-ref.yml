@@ -1,0 +1,38 @@
+bin_dir: /home/centos/spec2006
+benchmarks: 
+    400.perlbench.ref: 
+        binary: bblvmlinux-400.perlbench.ref
+        sample: bblvmlinux-400.perlbench.ref.sample
+    401.bzip2.ref: 
+        binary: bblvmlinux-401.bzip2.ref
+        sample: bblvmlinux-401.bzip2.ref.sample
+    403.gcc.ref: 
+        binary: bblvmlinux-403.gcc.ref
+        sample: bblvmlinux-403.gcc.ref.sample
+    429.mcf.ref: 
+        binary: bblvmlinux-429.mcf.ref
+        sample: bblvmlinux-429.mcf.ref.sample
+    445.gobmk.ref: 
+        binary: bblvmlinux-445.gobmk.ref
+        sample: bblvmlinux-445.gobmk.ref.sample
+    456.hmmer.ref: 
+        binary: bblvmlinux-456.hmmer.ref
+        sample: bblvmlinux-456.hmmer.ref.sample
+    458.sjeng.ref: 
+        binary: bblvmlinux-458.sjeng.ref
+        sample: bblvmlinux-458.sjeng.ref.sample
+    462.libquantum.ref: 
+        binary: bblvmlinux-462.libquantum.ref
+        sample: bblvmlinux-462.libquantum.ref.sample
+    464.h264ref.ref: 
+        binary: bblvmlinux-464.h264ref.ref
+        sample: bblvmlinux-464.h264ref.ref.sample
+    471.omnetpp.ref: 
+        binary: bblvmlinux-471.omnetpp.ref
+        sample: bblvmlinux-471.omnetpp.ref.sample
+    473.astar.ref: 
+        binary: bblvmlinux-473.astar.ref
+        sample: bblvmlinux-473.astar.ref.sample
+    483.xalancbmk.ref: 
+        binary: bblvmlinux-483.xalancbmk.ref
+        sample: bblvmlinux-483.xalancbmk.ref.sample
